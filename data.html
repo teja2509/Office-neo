@@ -63,7 +63,7 @@
 async function displayData() {
     try {
         // Query data in descending order by date
-        const q = query(collection(db, 'expenses'), orderBy('date', 'desc'));
+        const q = query(collection(db, 'expenses'), orderBy('date', 'asc'));
         const querySnapshot = await getDocs(q);
 
         // Clear existing table rows
