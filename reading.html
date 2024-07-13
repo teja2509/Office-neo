@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reading Data Entry</title>
+    <link rel="stylesheet" href="reading.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Enter Reading Data</h1>
+        <form id="data-form">
+            <label for="start-day">Start Day:</label>
+            <input type="date" id="start-day" name="startDay" required>
+            <label for="end-day">End Day:</label>
+            <input type="date" id="end-day" name="endDay" required>
+            <label for="reading">Reading:</label>
+            <input type="number" id="reading" name="reading" required>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="notification"></div>
+    </div>
+
+    <div class="container">
+        <h1>Submitted Reading Data</h1>
+        <table id="reading-table">
+            <thead>
+                <tr>
+                    <th>Start Day</th>
+                    <th>End Day</th>
+                    <th>Reading</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5eTliL1fln_8oRuj0V1O-ZIBGA5DS5iI",
+            authDomain: "office-neo.firebaseapp.com",
+            projectId: "office-neo",
+            storageBucket: "office-neo.appspot.com",
+            messagingSenderId: "3888727028",
+            appId: "1:3888727028:web:23f950f5d50d9e0c61afa1",
+            measurementId: "G-1P012X5VPQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Reference to form and notification element
+        const form = document.getElementById('data-form');
+        const notification = document.getElementById('notification');
+        const tableBody = document.querySelector('#reading-table tbody');
+
+        // Function to display a message
+        function displayMessage(message, isSuccess) {
+            notification.textContent = message;
+            notification.style.color = isSuccess ? 'green' : 'red';
+            setTimeout(() => {
+                notification.textContent = '';
+            }, 3000);
+        }
+
+        // Function to format date as DD-MM-YYYY
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is zero-indexed
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // Function to display data in tabular form
+        async function displayReadingData() {
+            try {
+                const querySnapshot = await getDocs(collection(db, 'readings'), orderBy('endDay', 'desc'));
+                tableBody.innerHTML = ''; // Clear existing table rows
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = document.createElement('tr');
+
+                    const startDayCell = document.createElement('td');
+                    startDayCell.textContent = formatDate(data.startDay);
+                    row.appendChild(startDayCell);
+
+                    const endDayCell = document.createElement('td');
+                    endDayCell.textContent = formatDate(data.endDay);
+                    row.appendChild(endDayCell);
+
+                    const readingCell = document.createElement('td');
+                    readingCell.textContent = data.reading;
+                    row.appendChild(readingCell);
+
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('Error getting data: ', error);
+            }
+        }
+
+        // Form submission event listener
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const startDay = formData.get('startDay');
+            const endDay = formData.get('endDay');
+            const reading = parseFloat(formData.get('reading'));
+
+            try {
+                await addDoc(collection(db, 'readings'), {
+                    startDay: startDay,
+                    endDay: endDay,
+                    reading: reading
+                });
+                displayMessage('Data added successfully!', true);
+                form.reset();
+                displayReadingData();
+            } catch (error) {
+                displayMessage('Error adding data: ' + error.message, false);
+            }
+        });
+
+        // Initial data display
+        displayReadingData();
+    </script>
+</body>
+</html>
