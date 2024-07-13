@@ -12,6 +12,11 @@
         <form id="data-form">
             <label for="date">Date:</label>
             <input type="date" id="date" name="date" required>
+            <div id="pre-entered-categories">
+                <span class="pre-entered-category">Petrol</span>
+                <span class="pre-entered-category">Food</span>
+                <!-- Add more pre-entered categories as needed -->
+            </div>
             <label for="category">Category:</label>
             <input type="text" id="category" name="category" required>
             <label for="price">Price:</label>
@@ -21,6 +26,7 @@
         <div id="notification"></div>
         <div id="total-price"></div>
         <a href="data.html">View Submitted Data in Table</a>
+        <a href="reading.html">Enter Reading</a>
     </div>
 
     <!-- Firebase SDKs -->
@@ -99,6 +105,14 @@
             } catch (error) {
                 displayMessage('Error adding data: ' + error.message, false);
             }
+        });
+
+        // Add event listeners to pre-entered category spans
+        const preEnteredCategories = document.querySelectorAll('.pre-entered-category');
+        preEnteredCategories.forEach(category => {
+            category.addEventListener('click', () => {
+                document.getElementById('category').value = category.textContent;
+            });
         });
 
         // Initial display of total price
