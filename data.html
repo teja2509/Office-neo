@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Display</title>
+    <link rel="stylesheet" href="data.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Submitted Data</h1>
+        <table id="data-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Data will be inserted here dynamically -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5eTliL1fln_8oRuj0V1O-ZIBGA5DS5iI",
+            authDomain: "office-neo.firebaseapp.com",
+            projectId: "office-neo",
+            storageBucket: "office-neo.appspot.com",
+            messagingSenderId: "3888727028",
+            appId: "1:3888727028:web:23f950f5d50d9e0c61afa1",
+            measurementId: "G-1P012X5VPQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Reference to the table body element
+        const tableBody = document.getElementById('data-table').querySelector('tbody');
+
+        // Function to format date as DD-MM-YYYY
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is zero-indexed
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // Function to display data from Firestore in a table
+        // JavaScript for Data Display page
+
+// Function to display data from Firestore in a table
+async function displayData() {
+    try {
+        // Query data in descending order by date
+        const q = query(collection(db, 'expenses'), orderBy('date', 'desc'));
+        const querySnapshot = await getDocs(q);
+
+        // Clear existing table rows
+        tableBody.innerHTML = '';
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const row = document.createElement('tr');
+
+            const dateCell = document.createElement('td');
+            dateCell.textContent = formatDate(data.date); // Format date as DD-MM-YYYY
+            row.appendChild(dateCell);
+
+            const categoryCell = document.createElement('td');
+            categoryCell.textContent = data.category;
+            row.appendChild(categoryCell);
+
+            const priceCell = document.createElement('td');
+            priceCell.textContent = data.price.toFixed(2); // Ensure price is formatted to 2 decimal places
+            row.appendChild(priceCell);
+
+            // Insert the new row at the beginning of the table (top)
+            tableBody.insertBefore(row, tableBody.firstChild);
+        });
+    } catch (error) {
+        console.error('Error getting data: ', error);
+    }
+}
+
+
+        // Initial data display
+        displayData();
+    </script>
+</body>
+</html>

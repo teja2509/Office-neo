@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firestore Data Entry</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Enter Data</h1>
+        <form id="data-form">
+            <label for="date">Date:</label>
+            <input type="date" id="date" name="date" required>
+            <label for="category">Category:</label>
+            <input type="text" id="category" name="category" required>
+            <label for="price">Price:</label>
+            <input type="number" id="price" name="price" required>
+            <button type="submit">Submit</button>
+        </form>
+        <div id="notification"></div>
+        <div id="total-price"></div>
+        <a href="data.html">View Submitted Data in Table</a>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5eTliL1fln_8oRuj0V1O-ZIBGA5DS5iI",
+            authDomain: "office-neo.firebaseapp.com",
+            projectId: "office-neo",
+            storageBucket: "office-neo.appspot.com",
+            messagingSenderId: "3888727028",
+            appId: "1:3888727028:web:23f950f5d50d9e0c61afa1",
+            measurementId: "G-1P012X5VPQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Reference to the form, notification, and total price elements
+        const form = document.getElementById('data-form');
+        const notification = document.getElementById('notification');
+        const totalPriceDisplay = document.getElementById('total-price');
+
+        // Function to display a message
+        function displayMessage(message, isSuccess) {
+            notification.textContent = message;
+            notification.style.color = isSuccess ? 'green' : 'red';
+            setTimeout(() => {
+                notification.textContent = '';
+            }, 3000);
+        }
+
+        // Function to calculate and display total price
+        async function displayTotalPrice() {
+            try {
+                const q = query(collection(db, 'expenses'));
+                const querySnapshot = await getDocs(q);
+
+                let total = 0;
+                querySnapshot.forEach((doc) => {
+                    total += doc.data().price;
+                });
+
+                totalPriceDisplay.textContent = `Total Price: ${total.toFixed(2)}`;
+            } catch (error) {
+                console.error('Error calculating total price: ', error);
+            }
+        }
+
+        // Form submission event listener
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form data
+            const formData = new FormData(form);
+            const date = formData.get('date');
+            const category = formData.get('category');
+            const price = parseFloat(formData.get('price'));
+
+            // Save data to Firestore
+            try {
+                await addDoc(collection(db, 'expenses'), {
+                    date: date,
+                    category: category,
+                    price: price
+                });
+                displayMessage('Data added successfully!', true);
+                form.reset();
+                // Recalculate and display total price after adding new data
+                displayTotalPrice();
+            } catch (error) {
+                displayMessage('Error adding data: ' + error.message, false);
+            }
+        });
+
+        // Initial display of total price
+        displayTotalPrice();
+    </script>
+</body>
+</html>
