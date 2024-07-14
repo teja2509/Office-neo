@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Expenses</title>
+    <style>
+        /* Reset default margin and padding */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Body styles */
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+
+        /* Container styles */
+        .container {
+            max-width: 100%;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            overflow-x: auto; /* Add horizontal scrollbar */
+        }
+
+        /* Header styles */
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        /* Table styles */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        table th, table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            white-space: nowrap; /* Prevent text wrapping */
+        }
+
+        table th {
+            background-color: #f2f2f2;
+        }
+
+        
+        /* Responsive styles */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            table {
+                font-size: 16px;
+            }
+            
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        
+        <div id="data-container">
+            <!-- Table will be displayed here -->
+        </div>
+        <div id="notification"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+        import { getFirestore, collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB5eTliL1fln_8oRuj0V1O-ZIBGA5DS5iI",
+            authDomain: "office-neo.firebaseapp.com",
+            projectId: "office-neo",
+            storageBucket: "office-neo.appspot.com",
+            messagingSenderId: "3888727028",
+            appId: "1:3888727028:web:23f950f5d50d9e0c61afa1",
+            measurementId: "G-1P012X5VPQ"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Function to calculate and display weekly expenses
+        async function calculateAndDisplayWeeklyExpenses() {
+            try {
+                // Clear previous displayed data
+                const dataContainer = document.getElementById('data-container');
+                dataContainer.innerHTML = '';
+
+                // Initialize object to hold weekly expenses
+                const weeklyExpenses = {};
+
+                // Query expenses from Firestore
+                const q = query(collection(db, 'expenses'));
+                const querySnapshot = await getDocs(q);
+
+                // Process each expense document
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const date = new Date(data.date);
+                    const monday = getMonday(date); // Get Monday of the current week
+
+                    // Calculate Sunday of the current week
+                    const sunday = new Date(monday);
+                    sunday.setDate(monday.getDate() + 6); // Sunday is 6 days after Monday
+
+                    // Format dates for storage
+                    const formattedMonday = formatDate(monday);
+                    const formattedSunday = formatDate(sunday);
+
+                    // Generate unique key for each week
+                    const weekKey = `${formattedMonday} to ${formattedSunday}`;
+
+                    // Initialize week if not already
+                    if (!weeklyExpenses[weekKey]) {
+                        weeklyExpenses[weekKey] = {
+                            startDate: formattedMonday,
+                            endDate: formattedSunday,
+                            total: 0,
+                            details: {} // To store details for each category
+                        };
+                    }
+
+                    // Add price to total for the week
+                    weeklyExpenses[weekKey].total += data.price;
+
+                    // Add details for each category
+                    if (!weeklyExpenses[weekKey].details[data.category]) {
+                        weeklyExpenses[weekKey].details[data.category] = 0;
+                    }
+                    weeklyExpenses[weekKey].details[data.category] += data.price;
+                });
+
+                // Convert object to array for easier display
+                const weeklyExpensesArray = Object.values(weeklyExpenses);
+
+                // Display the calculated weekly expenses in a table
+                displayWeeklyExpensesTable(weeklyExpensesArray);
+            } catch (error) {
+                displayMessage('Error calculating expenses: ' + error.message, false);
+            }
+        }
+
+        // Function to display weekly expenses in a table
+        function displayWeeklyExpensesTable(weeklyExpenses) {
+            const dataContainer = document.getElementById('data-container');
+
+            if (weeklyExpenses && weeklyExpenses.length > 0) {
+                let html = '<h2>Weekly Expenses & Data</h2>';
+                html += '<table>';
+                html += '<tr><th>Start Day</th><th>End Day</th><th>Total</th><th>IndusInd</th><th>AU</th><th>Axis</th><th>Yes</th><th>Salary</th></tr>';
+
+                weeklyExpenses.forEach(item => {
+                    html += `<tr>`;
+                    html += `<td>${item.startDate}</td>`;
+                    html += `<td>${item.endDate}</td>`;
+                    html += `<td>${item.total.toFixed(2)}</td>`;
+                    html += `<td>${item.details['IndusInd'] ? item.details['IndusInd'].toFixed(2) : ''}</td>`;
+                    html += `<td>${item.details['AU'] ? item.details['AU'].toFixed(2) : ''}</td>`;
+                    html += `<td>${item.details['Axis'] ? item.details['Axis'].toFixed(2) : ''}</td>`;
+                    html += `<td>${item.details['Yes'] ? item.details['Yes'].toFixed(2) : ''}</td>`;
+                    html += `<td>${item.details['Salary'] ? item.details['Salary'].toFixed(2) : ''}</td>`;
+                    html += `</tr>`;
+                });
+
+                html += '</table>';
+                dataContainer.innerHTML = html;
+            } else {
+                dataContainer.innerHTML = '<p>No weekly expenses data found.</p>';
+            }
+        }
+
+        // Helper function to get Monday of the week for a given date
+        function getMonday(date) {
+            const day = date.getDay();
+            const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust when day is Sunday
+            return new Date(date.setDate(diff));
+        }
+
+        // Helper function to format date as DD-MM-YYYY
+        function formatDate(date) {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Months are zero based
+            const year = date.getFullYear();
+            return `${day}-${month}-${year}`;
+        }
+
+        // Display initial weekly expenses
+        calculateAndDisplayWeeklyExpenses();
+    </script>
+</body>
+</html>
