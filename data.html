@@ -3,99 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Data Display</title>
-    <link rel="stylesheet" href="data.css">
+    <title>Start Day Expenses Entry</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <h1>Submitted Data</h1>
-        <table id="data-table">
-            <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Category</th>
-                    <th>Price</th>
-                </tr>
-            </thead>
-            <tbody>
-                <!-- Data will be inserted here dynamically -->
-            </tbody>
-        </table>
+        <h1>Enter Start Day Expenses</h1>
+        <form id="start-day-form">
+            <label for="start-date">Start Date:</label>
+            <input type="date" id="start-date" name="start-date" required>
+            <label for="indusind">IndusInd:</label>
+            <input type="number" id="indusind" name="indusind">
+            <label for="au">AU:</label>
+            <input type="number" id="au" name="au">
+            <label for="axis">Axis:</label>
+            <input type="number" id="axis" name="axis">
+            <label for="yes">Yes:</label>
+            <input type="number" id="yes" name="yes">
+            <label for="salary">Salary:</label>
+            <input type="number" id="salary" name="salary">
+            <button type="submit">Submit</button>
+        </form>
+        <div id="notification"></div>
+        <a href="data.html">View Submitted Data in Table</a>
+        <a href="reading.html">Enter Reading</a>
+        <a href="expenses.html">View Expenses</a>
     </div>
 
     <!-- Firebase SDKs -->
     <script type="module">
-        // Import the functions you need from the SDKs you need
+        // Import Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
-        // Your web app's Firebase configuration
+        // Firebase configuration
         const firebaseConfig = {
-            apiKey: "AIzaSyB5eTliL1fln_8oRuj0V1O-ZIBGA5DS5iI",
-            authDomain: "office-neo.firebaseapp.com",
-            projectId: "office-neo",
-            storageBucket: "office-neo.appspot.com",
-            messagingSenderId: "3888727028",
-            appId: "1:3888727028:web:23f950f5d50d9e0c61afa1",
-            measurementId: "G-1P012X5VPQ"
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_AUTH_DOMAIN",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_STORAGE_BUCKET",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
         };
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // Reference to the table body element
-        const tableBody = document.getElementById('data-table').querySelector('tbody');
+        // Reference to the form and notification elements
+        const form = document.getElementById('start-day-form');
+        const notification = document.getElementById('notification');
 
-        // Function to format date as DD-MM-YYYY
-        function formatDate(dateString) {
-            const date = new Date(dateString);
-            const day = date.getDate().toString().padStart(2, '0');
-            const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Month is zero-indexed
-            const year = date.getFullYear();
-            return `${day}-${month}-${year}`;
+        // Function to display a message
+        function displayMessage(message, isSuccess) {
+            notification.textContent = message;
+            notification.style.color = isSuccess ? 'green' : 'red';
+            setTimeout(() => {
+                notification.textContent = '';
+            }, 3000);
         }
 
-        // Function to display data from Firestore in a table
-        // JavaScript for Data Display page
+        // Form submission event listener
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
 
-// Function to display data from Firestore in a table
-async function displayData() {
-    try {
-        // Query data in descending order by date
-        const q = query(collection(db, 'expenses'), orderBy('date', 'asc'));
-        const querySnapshot = await getDocs(q);
+            // Get form data
+            const formData = new FormData(form);
+            const startDate = formData.get('start-date');
+            const indusind = formData.get('indusind') || 0;
+            const au = formData.get('au') || 0;
+            const axis = formData.get('axis') || 0;
+            const yes = formData.get('yes') || 0;
+            const salary = formData.get('salary') || 0;
 
-        // Clear existing table rows
-        tableBody.innerHTML = '';
+            // Save data to Firestore
+            try {
+                await addDoc(collection(db, 'start_day_expenses'), {
+                    startDate: startDate,
+                    indusind: parseFloat(indusind),
+                    au: parseFloat(au),
+                    axis: parseFloat(axis),
+                    yes: parseFloat(yes),
+                    salary: parseFloat(salary)
+                });
+                displayMessage('Data added successfully!', true);
+                form.reset();
 
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            const row = document.createElement('tr');
-
-            const dateCell = document.createElement('td');
-            dateCell.textContent = formatDate(data.date); // Format date as DD-MM-YYYY
-            row.appendChild(dateCell);
-
-            const categoryCell = document.createElement('td');
-            categoryCell.textContent = data.category;
-            row.appendChild(categoryCell);
-
-            const priceCell = document.createElement('td');
-            priceCell.textContent = data.price.toFixed(2); // Ensure price is formatted to 2 decimal places
-            row.appendChild(priceCell);
-
-            // Insert the new row at the beginning of the table (top)
-            tableBody.insertBefore(row, tableBody.firstChild);
+                // Redirect to view expenses page after a short delay
+                setTimeout(() => {
+                    window.location.href = 'expenses.html';
+                }, 2000); // 2000 milliseconds delay (2 seconds)
+            } catch (error) {
+                displayMessage('Error adding data: ' + error.message, false);
+            }
         });
-    } catch (error) {
-        console.error('Error getting data: ', error);
+
+        // Function to check if user has authenticated recently
+    function checkAuthenticationStatus() {
+        const authTimestamp = localStorage.getItem('authTimestamp');
+        if (authTimestamp) {
+            const currentTime = new Date().getTime();
+            const elapsedTime = currentTime - parseInt(authTimestamp);
+
+            // Check if elapsed time is within 5 minutes (300,000 milliseconds)
+            if (elapsedTime <= 300000) {
+                // User authenticated within last 5 minutes, continue to this page
+                console.log('User authenticated within last 5 minutes.');
+            } else {
+                // Authenticated more than 5 minutes ago, redirect to lock.html
+                console.log('User last authenticated more than 5 minutes ago.');
+                window.location.href = 'lock.html';
+            }
+        } else {
+            // No authentication timestamp found, redirect to lock.html
+            console.log('No authentication timestamp found.');
+            window.location.href = 'lock.html';
+        }
     }
-}
 
-
-        // Initial data display
-        displayData();
+    // Call the checkAuthenticationStatus function when the page loads
+    checkAuthenticationStatus();
     </script>
 </body>
-</html> 
+</html>
