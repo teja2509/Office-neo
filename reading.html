@@ -41,7 +41,7 @@
     <script type="module">
         // Import Firebase SDKs
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
 
         // Firebase configuration
         const firebaseConfig = {
@@ -84,7 +84,8 @@
         // Function to display data in tabular form
         async function displayReadingData() {
             try {
-                const querySnapshot = await getDocs(collection(db, 'readings'), orderBy('endDay', 'desc'));
+                const q = query(collection(db, 'readings'), orderBy('endDay', 'desc'));
+                const querySnapshot = await getDocs(q);
                 tableBody.innerHTML = ''; // Clear existing table rows
 
                 querySnapshot.forEach((doc) => {
@@ -135,7 +136,32 @@
 
         // Initial data display
         displayReadingData();
+
+        // Function to check if user has authenticated recently
+    function checkAuthenticationStatus() {
+        const authTimestamp = localStorage.getItem('authTimestamp');
+        if (authTimestamp) {
+            const currentTime = new Date().getTime();
+            const elapsedTime = currentTime - parseInt(authTimestamp);
+
+            // Check if elapsed time is within 5 minutes (300,000 milliseconds)
+            if (elapsedTime <= 300000) {
+                // User authenticated within last 5 minutes, continue to this page
+                console.log('User authenticated within last 5 minutes.');
+            } else {
+                // Authenticated more than 5 minutes ago, redirect to lock.html
+                console.log('User last authenticated more than 5 minutes ago.');
+                window.location.href = 'lock.html';
+            }
+        } else {
+            // No authentication timestamp found, redirect to lock.html
+            console.log('No authentication timestamp found.');
+            window.location.href = 'lock.html';
+        }
+    }
+
+    // Call the checkAuthenticationStatus function when the page loads
+    checkAuthenticationStatus();
     </script>
 </body>
 </html>
- 
