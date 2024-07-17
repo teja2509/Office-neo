@@ -117,8 +117,40 @@
             });
         });
 
+        
+            // Your existing Firebase initialization and other code...
+        
+            // Function to check if user has authenticated recently
+            function checkAuthenticationStatus() {
+                const authTimestamp = localStorage.getItem('authTimestamp');
+                if (authTimestamp) {
+                    const currentTime = new Date().getTime();
+                    const elapsedTime = currentTime - parseInt(authTimestamp);
+        
+                    // Check if elapsed time is within 5 minutes (300,000 milliseconds)
+                    if (elapsedTime <= 300000) {
+                        // User authenticated within last 5 minutes, continue to index.html
+                        console.log('User authenticated within last 5 minutes.');
+                    } else {
+                        // Authenticated more than 5 minutes ago, redirect to lock.html
+                        console.log('User last authenticated more than 5 minutes ago.');
+                        window.location.href = 'lock.html';
+                    }
+                } else {
+                    // No authentication timestamp found, redirect to lock.html
+                    console.log('No authentication timestamp found.');
+                    window.location.href = 'lock.html';
+                }
+            }
+        
+            // Call the checkAuthenticationStatus function when the page loads
+            checkAuthenticationStatus();
+        
+        
+
         // Initial display of total price
         displayTotalPrice();
     </script>
 </body>
 </html>
+
